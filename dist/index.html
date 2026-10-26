@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="STORI - Multimodal AI Assistant for Disabled Users with Gesture, Voice and Eye-Tracking Fallbacks. Don Bosco Institute of Technology, Dept. of Computer Engineering, Track 2 Group 5." />
+    <title>STORI - Multimodal AI Assistant</title>
+
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- MediaPipe (Hands + Face Mesh) from CDN. Solution APIs are used because
+         they expose a high-level onResults callback and self-contained assets. -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <meta property="og:image" content="https://bolt.new/static/og_default.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+    <script type="module" crossorigin src="/assets/index-C6mslWSl.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BcJUFnoP.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- High-level app chrome -->
+    <header class="app-header" role="banner">
+      <div class="app-header__inner">
+        <div class="brand">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="28" height="28" fill="none" aria-hidden="true">
+              <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+              <path d="M10 16a6 6 0 1 1 12 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="16" r="2.5" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="brand__name">STORI</span>
+        </div>
+
+        <nav class="header-nav" aria-label="Primary">
+          <ol id="step-indicator" class="step-indicator" aria-hidden="true"></ol>
+        </nav>
+
+        <div class="header-actions">
+          <button id="hc-toggle" class="chip chip--ghost" type="button" aria-pressed="false" title="Toggle high-contrast mode">
+            <span aria-hidden="true">◐</span> <span class="chip__label">Contrast</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="app-main" tabindex="-1">
+
+      <!-- ============================================================= -->
+      <!-- SCREEN 1 — LANDING                                            -->
+      <!-- ============================================================= -->
+      <section id="screen-landing" class="screen is-active" data-screen="1" aria-labelledby="landing-title">
+        <div class="screen__pad">
+          <p class="eyebrow">Multimodal AI Assistant · Experiment 5</p>
+          <h1 id="landing-title" class="display">STORI</h1>
+          <p class="tagline">Control your device your way. If one method fails, we switch for you.</p>
+
+          <ul class="modality-chips" role="list">
+            <li class="mchip mchip--gesture">
+              <span class="mchip__icon" aria-hidden="true">✋</span>
+              <span class="mchip__title">Gesture</span>
+              <span class="mchip__sub">Hand signs</span>
+            </li>
+            <li class="mchip mchip--voice">
+              <span class="mchip__icon" aria-hidden="true">🎤</span>
+              <span class="mchip__title">Voice</span>
+              <span class="mchip__sub">Speech commands</span>
+            </li>
+            <li class="mchip mchip--eye">
+              <span class="mchip__icon" aria-hidden="true">👁</span>
+              <span class="mchip__title">Eye-Tracking</span>
+              <span class="mchip__sub">Gaze + dwell</span>
+            </li>
+          </ul>
+
+          <div class="privacy-note" role="note">
+            <span class="privacy-note__icon" aria-hidden="true">🔒</span>
+            <p><strong>On-device only.</strong> All camera, microphone and face processing happens locally in your browser. No video, audio or biometric data ever leaves this device or gets uploaded.</p>
+          </div>
+
+          <fieldset class="persona-select" aria-labelledby="persona-legend">
+            <legend id="persona-legend" class="persona-select__legend">Choose a persona to tune the demo</legend>
+            <label class="persona-card">
+              <input type="radio" name="persona" value="aurora" checked />
+              <span class="persona-card__body">
+                <span class="persona-card__name">Aurora</span>
+                <span class="persona-card__role">Blind law student</span>
+                <span class="persona-card__flow">Voice-first → Eye fallback</span>
+              </span>
+            </label>
+            <label class="persona-card">
+              <input type="radio" name="persona" value="ares" />
+              <span class="persona-card__body">
+                <span class="persona-card__name">Ares</span>
+                <span class="persona-card__role">Hand-mobility professional</span>
+                <span class="persona-card__flow">Eye + Voice first</span>
+              </span>
+            </label>
+          </fieldset>
+
+          <div class="screen__cta">
+            <button class="btn btn--primary btn--lg" data-next="2" type="button">Get Started</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- SCREEN 2 — SETUP                                              -->
+      <!-- ============================================================= -->
+      <section id="screen-setup" class="screen" data-screen="2" aria-labelledby="setup-title" hidden>
+        <div class="screen__pad">
+          <h2 id="setup-title" class="screen-title">Set up your inputs</h2>
+          <p class="screen-sub">Enable the modalities you want to use and calibrate eye-tracking. You can run the whole demo in Simulate mode if you deny permissions.</p>
+
+          <div class="toggle-cards">
+            <article class="tcard" data-modality="gesture">
+              <header class="tcard__head">
+                <span class="tcard__icon tcard__icon--gesture" aria-hidden="true">✋</span>
+                <h3 class="tcard__title">Gesture</h3>
+                <span class="dot" data-status-dot aria-label="Status"></span>
+              </header>
+              <p class="tcard__desc">Webcam + MediaPipe Hands. Detects open palm, fist, thumbs up, peace, pointing.</p>
+              <button class="btn btn--sm" data-permission="gesture" type="button">Request camera</button>
+              <p class="tcard__status" data-status-text>Not requested</p>
+            </article>
+
+            <article class="tcard" data-modality="voice">
+              <header class="tcard__head">
+                <span class="tcard__icon tcard__icon--voice" aria-hidden="true">🎤</span>
+                <h3 class="tcard__title">Voice</h3>
+                <span class="dot" data-status-dot aria-label="Status"></span>
+              </header>
+              <p class="tcard__desc">Web Speech API (en-IN). Understands mute, unmute, volume up/down, pause, play, open browser.</p>
+              <button class="btn btn--sm" data-permission="voice" type="button">Request mic</button>
+              <p class="tcard__status" data-status-text>Not requested</p>
+            </article>
+
+            <article class="tcard" data-modality="eye">
+              <header class="tcard__head">
+                <span class="tcard__icon tcard__icon--eye" aria-hidden="true">👁</span>
+                <h3 class="tcard__title">Eye-Tracking</h3>
+                <span class="dot" data-status-dot aria-label="Status"></span>
+              </header>
+              <p class="tcard__desc">MediaPipe Face Mesh (refineLandmarks) iris landmarks. 5-point calibration, dwell-to-select.</p>
+              <button class="btn btn--sm" data-permission="eye" type="button">Request camera</button>
+              <p class="tcard__status" data-status-text>Not requested</p>
+            </article>
+          </div>
+
+          <div class="setup-grid">
+            <div class="card">
+              <h3 class="card__title">Fallback hierarchy</h3>
+              <ol class="hierarchy" aria-label="Fallback priority">
+                <li><span class="hierarchy__rank">1</span> Gesture</li>
+                <li><span class="hierarchy__rank">2</span> Voice</li>
+                <li><span class="hierarchy__rank">3</span> Eye-Tracking</li>
+              </ol>
+              <p class="card__note">If gesture and voice are both below 60%, STORI auto-switches to eye-tracking.</p>
+            </div>
+
+            <div class="card">
+              <h3 class="card__title">Confidence threshold</h3>
+              <div class="threshold">
+                <input id="threshold-slider" class="threshold__input" type="range" min="40" max="95" step="1" value="75" aria-label="Confidence threshold percent" />
+                <output id="threshold-value" class="threshold__value" for="threshold-slider">75%</output>
+              </div>
+              <p class="card__note">A modality only fires when its confidence is at or above this value.</p>
+            </div>
+
+            <div class="card card--calibrate">
+              <h3 class="card__title">Calibrate eye-tracking</h3>
+              <p class="card__note">Look at each dot and click it. 5 points map iris position to screen coordinates.</p>
+              <div id="calibration-stage" class="calibration-stage" hidden>
+                <button class="cal-dot" data-pt="0" type="button" aria-label="Calibration point 1, center"></button>
+                <button class="cal-dot" data-pt="1" type="button" aria-label="Calibration point 2, top-left"></button>
+                <button class="cal-dot" data-pt="2" type="button" aria-label="Calibration point 3, top-right"></button>
+                <button class="cal-dot" data-pt="3" type="button" aria-label="Calibration point 4, bottom-left"></button>
+                <button class="cal-dot" data-pt="4" type="button" aria-label="Calibration point 5, bottom-right"></button>
+                <div class="calibration-progress"><span id="cal-progress">0</span> / 5 points</div>
+              </div>
+              <button id="calibrate-start" class="btn btn--sm" type="button">Start calibration</button>
+            </div>
+          </div>
+
+          <div class="screen__cta">
+            <button class="btn btn--ghost" data-back type="button">Back</button>
+            <button class="btn btn--primary btn--lg" data-next="3" type="button">Start Assistant</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- SCREEN 3 — LIVE ASSISTANT                                     -->
+      <!-- ============================================================= -->
+      <section id="screen-live" class="screen" data-screen="3" aria-labelledby="live-title" hidden>
+        <div class="screen__pad screen__pad--wide">
+          <h2 id="live-title" class="screen-title">Live Assistant</h2>
+          <p class="screen-sub">Move, speak or look. STORI scores each input live and acts on the highest-confidence one.</p>
+
+          <!-- fallback banner, shown by JS -->
+          <div id="fallback-banner" class="banner banner--warn" role="status" aria-live="polite" hidden>
+            <span class="banner__icon" aria-hidden="true">⚠</span>
+            <span id="fallback-banner-text">Both gesture and voice are below 60%. Auto-switched to Eye-Tracking.</span>
+          </div>
+
+          <div class="live-grid">
+            <div class="live-grid__main">
+              <div class="camera-card">
+                <div class="camera-card__media">
+                  <video id="camera-video" class="camera-video" autoplay playsinline muted></video>
+                  <canvas id="camera-canvas" class="camera-canvas" aria-hidden="true"></canvas>
+                  <div id="camera-overlay" class="camera-overlay" hidden>
+                    <div class="camera-overlay__box">
+                      <p id="camera-overlay-text">Camera unavailable.</p>
+                      <button id="simulate-enable" class="btn btn--sm" type="button">Enable Simulate mode</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="camera-card__foot">
+                  <span class="pill" data-cam-status>Camera: idle</span>
+                  <span class="pill pill--alt" data-sim-status>Simulate: off</span>
+                </div>
+              </div>
+
+              <div class="meters" aria-label="Live confidence meters">
+                <div class="meter" data-meter="gesture">
+                  <div class="meter__head">
+                    <span class="meter__label">Gesture</span>
+                    <span class="meter__value" data-meter-value>0%</span>
+                  </div>
+                  <div class="meter__track"><div class="meter__fill meter__fill--gesture" data-meter-fill></div></div>
+                </div>
+                <div class="meter" data-meter="voice">
+                  <div class="meter__head">
+                    <span class="meter__label">Voice</span>
+                    <span class="meter__value" data-meter-value>0%</span>
+                  </div>
+                  <div class="meter__track"><div class="meter__fill meter__fill--voice" data-meter-fill></div></div>
+                </div>
+                <div class="meter" data-meter="eye">
+                  <div class="meter__head">
+                    <span class="meter__label">Eye-Tracking</span>
+                    <span class="meter__value" data-meter-value>0%</span>
+                  </div>
+                  <div class="meter__track"><div class="meter__fill meter__fill--eye" data-meter-fill></div></div>
+                </div>
+              </div>
+
+              <div class="detected-box" aria-live="polite">
+                <span class="detected-box__label">Detected command</span>
+                <span id="detected-command" class="detected-box__value">—</span>
+                <span id="detected-via" class="detected-box__via"></span>
+              </div>
+
+              <div class="player-card" aria-label="Demo media player">
+                <div class="player-card__head">
+                  <span class="player-card__track">Demo track — "Signal"</span>
+                  <span id="player-state" class="player-card__state">playing</span>
+                </div>
+                <div class="player-card__progress" aria-hidden="true"><span id="player-bar"></span></div>
+                <div class="player-card__row">
+                  <button id="player-play" class="player-btn" type="button" aria-label="Play / Pause">⏸</button>
+                  <button id="player-mute" class="player-btn" type="button" aria-label="Mute / Unmute">🔊</button>
+                  <div class="player-card__vol">
+                    <span class="player-card__vol-label">Vol</span>
+                    <div class="player-card__vol-bar"><span id="player-vol"></span></div>
+                    <span id="player-vol-num" class="player-card__vol-num">70</span>
+                  </div>
+                </div>
+                <div id="browser-card" class="browser-card" hidden>
+                  <span class="browser-card__icon" aria-hidden="true">🌐</span>
+                  <span>Browser opened — example.com</span>
+                </div>
+              </div>
+            </div>
+
+            <aside class="live-grid__side">
+              <div class="card">
+                <h3 class="card__title">Command cheat-sheet</h3>
+                <ul class="cheat" role="list">
+                  <li><span class="cheat__key">✋ Open palm</span> Wake</li>
+                  <li><span class="cheat__key">✊ Fist</span> Mute</li>
+                  <li><span class="cheat__key">👍 Thumbs up</span> Volume Up</li>
+                  <li><span class="cheat__key">✌ Peace</span> Pause / Play</li>
+                  <li><span class="cheat__key">☝ Point</span> Unmute</li>
+                </ul>
+                <hr class="card__sep" />
+                <ul class="cheat" role="list">
+                  <li><span class="cheat__key">“mute”</span> Mute</li>
+                  <li><span class="cheat__key">“unmute”</span> Unmute</li>
+                  <li><span class="cheat__key">“volume up”</span> Volume Up</li>
+                  <li><span class="cheat__key">“volume down”</span> Volume Down</li>
+                  <li><span class="cheat__key">“pause” / “play”</span> Pause / Play</li>
+                  <li><span class="cheat__key">“open browser”</span> Open browser</li>
+                </ul>
+              </div>
+
+              <div class="card">
+                <h3 class="card__title">Controls</h3>
+                <button id="mic-btn" class="btn btn--voice btn--block" type="button" aria-pressed="false">🎤 Listen once</button>
+                <button id="noise-btn" class="btn btn--ghost btn--block" type="button">Simulate noisy environment</button>
+                <button id="sim-panel-btn" class="btn btn--ghost btn--block" type="button" aria-expanded="false">Simulate panel</button>
+                <div id="sim-panel" class="sim-panel" hidden>
+                  <p class="sim-panel__hint">Push a button to fake that modality’s confidence and command.</p>
+                  <div class="sim-panel__row">
+                    <button class="sim-btn sim-btn--gesture" data-sim='{"modality":"gesture","command":"volume up","confidence":86}' type="button">Gesture 86% · Vol Up</button>
+                    <button class="sim-btn sim-btn--gesture" data-sim='{"modality":"gesture","command":"mute","confidence":54}' type="button">Gesture 54% · Mute (low)</button>
+                    <button class="sim-btn sim-btn--voice" data-sim='{"modality":"voice","command":"pause","confidence":90}' type="button">Voice 90% · Pause</button>
+                    <button class="sim-btn sim-btn--voice" data-sim='{"modality":"voice","command":"play","confidence":48}' type="button">Voice 48% · Play (low)</button>
+                    <button class="sim-btn sim-btn--eye" data-sim='{"modality":"eye","command":"unmute","confidence":80}' type="button">Eye 80% · Unmute</button>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="screen__cta">
+            <button class="btn btn--ghost" data-back type="button">Back</button>
+            <button class="btn btn--primary btn--lg" data-action="execute" type="button">Execute Command</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- SCREEN 4 — CONFIRMATION / FALLBACK REVIEW                     -->
+      <!-- ============================================================= -->
+      <section id="screen-confirm" class="screen" data-screen="4" aria-labelledby="confirm-title" hidden>
+        <div class="screen__pad">
+          <h2 id="confirm-title" class="screen-title">Confirm the decision</h2>
+          <div id="confirm-banner" class="banner banner--info" role="status" aria-live="polite"></div>
+
+          <ol class="flow-diagram" aria-label="Decision flow">
+            <li class="flow-step"><span class="flow-step__num">1</span><span>Input</span></li>
+            <li class="flow-step"><span class="flow-step__num">2</span><span>Confidence score</span></li>
+            <li class="flow-step"><span class="flow-step__num">3</span><span>Threshold</span></li>
+            <li class="flow-step flow-step--end" id="flow-end"><span class="flow-step__num">4</span><span>Execute / Fallback</span></li>
+          </ol>
+
+          <div class="confirm-summary">
+            <div class="summary-row"><span>Modality</span><span id="cf-modality">—</span></div>
+            <div class="summary-row"><span>Command</span><span id="cf-command">—</span></div>
+            <div class="summary-row"><span>Confidence</span><span id="cf-confidence">—</span></div>
+            <div class="summary-row"><span>Fallback triggered</span><span id="cf-fallback">—</span></div>
+          </div>
+
+          <div class="confirm-actions">
+            <button id="confirm-yes" class="btn btn--primary btn--xl gaze-target" data-action="confirm" type="button">Confirm</button>
+            <button id="confirm-no" class="btn btn--ghost btn--xl gaze-target" data-action="cancel" type="button">Cancel</button>
+          </div>
+          <p class="confirm-hint">Tip: in eye-tracking mode, dwell on a button for 2 seconds to select it.</p>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- SCREEN 5 — SUCCESS / STATUS                                   -->
+      <!-- ============================================================= -->
+      <section id="screen-success" class="screen" data-screen="5" aria-labelledby="success-title" hidden>
+        <div class="screen__pad">
+          <div class="success-check" aria-hidden="true">
+            <svg viewBox="0 0 52 52" width="72" height="72"><circle cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 27l8 8 16-18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h2 id="success-title" class="screen-title">Command executed successfully</h2>
+
+          <div class="card success-card">
+            <h3 class="card__title">Summary</h3>
+            <div class="summary-row"><span>Modality used</span><span id="s-modality">—</span></div>
+            <div class="summary-row"><span>Confidence</span><span id="s-confidence">—</span></div>
+            <div class="summary-row"><span>Response time</span><span id="s-response">—</span></div>
+            <div class="summary-row"><span>Fallback triggered</span><span id="s-fallback">—</span></div>
+            <div class="summary-row"><span>Command</span><span id="s-command">—</span></div>
+          </div>
+
+          <div class="card">
+            <h3 class="card__title">Last 5 log events</h3>
+            <ol id="log-list" class="log-list" aria-label="Recent events"></ol>
+          </div>
+
+          <div class="screen__cta">
+            <button class="btn btn--primary btn--lg" data-next="3" type="button">Run Another Command</button>
+            <button class="btn btn--ghost" data-next="1" type="button">Back to Home</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer" role="contentinfo">
+      <p>Don Bosco Institute of Technology &nbsp;|&nbsp; Dept. of Computer Engineering &nbsp;|&nbsp; Track 2, Group 5</p>
+    </footer>
+
+    <!-- Live status region for screen-reader announcements -->
+    <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  </body>
+</html>
